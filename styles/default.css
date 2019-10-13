@@ -1,0 +1,55 @@
+
+td, th, form {
+    padding: 5px;
+}
+
+thead tr th{
+    background-color: #f1f1f1;
+    border: 1px solid white; 
+    border-collapse:separate; 
+    border-spacing:5px 5px;
+}
+
+button {
+    border-radius: 4px;
+    margin: 5px;
+}
+body {
+    background-color: #f1f1f1;
+}
+
+div.segment {
+    background-color: white;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.button.edit {
+    background-color: blue;
+    border-color: blue;
+}
+
+i.glyphicon-pencil {
+    color: white;
+}
+
+.button.delete {
+    background-color: red;
+    border-color: red;
+}
+
+i.glyphicon-trash {
+    color: white;
+}
+
+label {
+    display: block;
+}
+
+.btn {
+    margin: 7px 0px;
+}
+
+select {
+    height: 26px;
+}

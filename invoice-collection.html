@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+    <script src=node_modules\moment\min\moment.min.js></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/1.3.0/json2html.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+    <script>
+        function editInvoice(id) {
+            window.location.href = `/invoice.html?id=${id}`;
+        };
+
+        function deleteInvoice(id) {
+            $.ajax({
+                url: "http://invoice-collection.herokuapp.com/invoices/" + id,
+                type: 'DELETE'
+            }).then(() => {
+                document.location.reload(true);
+            })
+        }
+        function confirmFilters() {
+            let filterParams = '?';
+            const search = document.getElementById('search').value;
+            const filter = document.getElementById('filter');
+            const filterProperty = filter.options[filter.selectedIndex].value;
+            const filterValue = document.getElementById('filter_value').value;
+            const sort = document.getElementById('sort');
+            const sortProperty = sort.options[sort.selectedIndex].value;
+            const sortOrder = document.getElementById('sort_order');
+            const orderValue = sortOrder.options[sortOrder.selectedIndex].value;
+            
+            if (search) {
+                filterParams = filterParams.concat(`q=${search}`);
+            }
+
+            if (filterProperty && filterValue) {
+                const lastChar = filterParams.charAt(filterParams.length - 1);
+                if (lastChar != '?') {
+                    filterParams = filterParams.concat('&');
+                }
+                filterParams = filterParams.concat(`${filterProperty}=${filterValue}`);
+            }
+
+            if (sortProperty) {
+                const lastChar = filterParams.charAt(filterParams.length - 1);
+                if (lastChar != '?') {
+                    filterParams = filterParams.concat('&');
+                }
+                filterParams = filterParams.concat(`_sort=${sortProperty}&_order=${orderValue}`);
+            }
+
+            window.location.href = `/invoice-collection.html${filterParams}`;
+        }
+        function clearFilters() {
+            document.getElementById('search').value = null;
+            document.getElementById('filter').value = '';
+            document.getElementById('filter_value').value = null;
+            document.getElementById('sort').value = '';
+            document.getElementById('sort_order').value = 'asc';
+        }
+    </script>
+    <script>
+        const searchParams = new URLSearchParams(window.location.search);
+        const qParam = searchParams.get('q');
+        const sortParam = searchParams.get('_sort');
+        const orderParam = searchParams.get('_order');
+        let filterProperty = '';
+        let filterValue = null;
+        for(var pair of searchParams.entries()) {
+            if (pair[0] != 'q' && pair[0] != '_sort' && pair[0] != '_order') {
+                filterProperty = pair[0];
+                filterValue = pair[1];
+            }
+        }
+        $.ajax({
+            url: `http://invoice-collection.herokuapp.com/invoices${window.location.search}`
+        }).then(function (data) {
+            
+            data.forEach(invoice => {
+                invoice.date_created = moment(invoice.date_created).format('DD.MM.YYYY')
+                invoice.date_supply = moment(invoice.date_supply).format('DD.MM.YYYY')
+            });
+            var transform =
+            {
+                "tag": "tbody", "children": [
+                    {
+                        "tag": "tr", "children": [
+                            { "tag": "td", "html": "${date_created}" },
+                            { "tag": "td", "html": "${number}" },
+                            { "tag": "td", "html": "${date_supply}" },
+                            { "tag": "td", "html": "${comment}" },
+                            { "tag": "td", "html": "<button type='button' class='edit button' onclick='editInvoice(\"${id}\")'><i class='glyphicon glyphicon-pencil'></i></button><button type='button' class='delete button' onclick='deleteInvoice(\"${id}\")'><i class='glyphicon glyphicon-trash'></i></button>" },
+                        ]
+                    }
+                ]
+            };
+
+            $('[invoiceCollection]').append(json2html.transform(data, transform));
+            document.getElementById('search').value = qParam;
+            document.getElementById('filter').value = filterProperty;
+            document.getElementById('filter_value').value = filterValue;
+            document.getElementById('sort').value = sortParam ? sortParam : '';
+            document.getElementById('sort_order').value = orderParam ? orderParam : 'asc';
+        });
+    </script>
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="styles/default.css">
+        <title>Invoices</title>
+    </head>
+    <body>
+        <form>
+            <h1>Invoices</h1>
+            <a href="/invoice.html" class="btn btn-default">Create new</a>
+            <div class='segment'>
+                <div>
+                    <label>Search:</label>
+                    <input id='search' type="text"/>
+                </div>
+                <div>
+                    <label>Filter by:</label>
+                    <div>
+                            <select id='filter'>
+                                <option value='' selected='selected'>(no filter)</option>
+                                <option value="date_created">Create</option>
+                                <option value="number">No</option>
+                                <option value="date_supply">Supply</option>
+                                <option value="comment">Comment</option>
+                            </select>
+                            <input id='filter_value' type="text" />
+                    </div>
+                </div>
+                <div>
+                    <label>Sort by:</label>
+                    <div>
+                        <select id='sort'>
+                            <option value='' selected='selected'>(no sorting)</option>
+                            <option value="date_created">Create</option>
+                            <option value="number">No</option>
+                            <option value="date_supply">Supply</option>
+                            <option value="comment">Comment</option>
+                        </select>
+                        <select id='sort_order'>
+                            <option value='asc' selected='selected'>asc</option>
+                            <option value="desc">desc</option>
+                        </select>
+                    </div>
+                </div>
+                <button type='button' class='btn btn-default' onclick="confirmFilters()">Confirm</button>
+                <button type='button' class='btn btn-default' onclick="clearFilters()">Clear</button>
+            </div>
+            <div class='segment'>
+                <table invoiceCollection>
+                    <thead>
+                        <tr>
+                            <th>Create</th>
+                            <th>No</th>
+                            <th>Supply</th>
+                            <th>Comment</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </form>
+    </body>
+</html>
